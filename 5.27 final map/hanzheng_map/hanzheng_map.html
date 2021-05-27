@@ -1,0 +1,608 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>England</title>
+    <meta
+      name="viewport"
+      content="initial-scale=1,maximum-scale=1,user-scalable=no"
+    />
+    <link
+      href="https://api.mapbox.com/mapbox-gl-js/v2.0.1/mapbox-gl.css"
+      rel="stylesheet"
+    />
+    <script src="https://api.mapbox.com/mapbox-gl-js/v2.0.1/mapbox-gl.js"></script>
+    <script charset="utf-8" src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="http://code.jquery.com/jquery-2.1.1.min.js"></script>
+    <script
+      charset="utf-8"
+      src="https://cdnjs.cloudflare.com/ajax/libs/dimple/2.3.0/dimple.latest.min.js"
+    ></script>
+    <script
+      type="text/javascript"
+      src="https://lib.baomitu.com/echarts/4.9.0-rc.1/echarts.js"
+    ></script>
+    <script type="text/javascript" src="./hanzheng/data.js"></script>
+    <script type="text/javascript" src="./hanzheng/area.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300&family=Noto+Sans+KR:wght@300&display=swap" rel="stylesheet">
+    <style>
+      html,
+      body {
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+        font-family: "Noto Sans KR", sans-serif;
+      }
+
+      #map {
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+      }
+
+      .left-wrapper {
+        position: absolute;
+        width: 360px;
+        height: 100%;
+        background: #fff;
+        z-index: 2;
+        padding: 20px;
+        opacity: 0.8;
+      }
+
+      .left-wrapper .title {
+        font-size: 22px;
+        margin-bottom: 13px;
+      }
+
+      .left-wrapper .select {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-around;
+        margin-bottom: -0.5cm;
+      }
+
+      .left-wrapper .select .select-list {
+        font-size: 14px;
+        padding: 3px 8px;
+        border-radius: 3px;
+        display: flex;
+        align-items: center;
+      }
+
+      .left-wrapper .select .select-list:hover {
+        cursor: pointer;
+      }
+
+      .left-wrapper .slider {
+        margin-top: 20px;
+      }
+      .left-wrapper .slider .slider-bar {
+        display: flex;
+        align-items: center;
+      }
+
+      .left-wrapper .slider .slider-bar span {
+        margin-left: 10px;
+      }
+
+      .left-wrapper .legend {
+        align-items: center;
+        margin-top: 20px;
+      }
+      .left-wrapper .legend span:first-child {
+        margin-right: 10px;
+      }
+      .left-wrapper .legend span:last-child {
+        margin-left: 10px;
+      }
+
+      .left-wrapper .legend .legend-color {
+        width: 100%;
+        height: 10px;
+        border-radius: 5px;
+        background-image: linear-gradient(to right, rgba(255, 255, 204, 1),rgba(255, 237, 160, 1),rgba(254, 217, 118, 1),rgba(254, 178, 76, 1),rgba(253, 141, 60, 1),rgba(252, 78, 42, 1),rgba(227, 26, 28, 1),rgba(189, 0, 38, 1),rgba(148, 0, 37, 1),rgba(103, 0, 31, 1));
+        margin-bottom: 10px;
+      }
+      .left-wrapper .legend .legend-val {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: -0.5cm;
+      }
+
+      .left-wrapper #echart-view {
+        width: 300px;
+        height: 300px;
+      }
+
+      .left-wrapper .description {
+        font-size: 14px;
+        overflow: hidden;
+      }
+
+      .left-wrapper .description .title {
+        font-size: 16px;
+        padding: 1px 0;
+      }
+
+      .left-wrapper .description .content {
+        overflow-y: scroll;
+        max-height: 120px;
+      }
+
+      .circle {
+        width: 6px;
+        height: 6px;
+        border-radius: 50%;
+        background: black;
+        display: inline-block;
+        margin-right: 5px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="map"></div>
+    <div class="left-wrapper">
+      <div class="title">England & Wales Domestic Electricity Consumption</div>
+      <p style="font-size:10px">Data download from: <a href="https://www.gov.uk/government/statistics/lower-and-middle-super-output-areas-electricity-consumption">GOV.UK</a></p>
+      <div class="select">
+        <span class="select1 select-list"
+          ><span class="circle"></span>Total number of domestic electricity
+          meters</span
+        >
+        <span class="select2 select-list"
+          ><span class="circle"></span>Total domestic electricity
+          consumption</span
+        >
+        <span class="select3 select-list"
+          ><span class="circle"></span>Mean domestic electricity
+          consumption</span
+        >
+        <span class="select4 select-list"
+          ><span class="circle"></span>Median domestic electricity
+          consumption</span
+        >
+      </div>
+      <div class="slider">
+        <div>Year:</div>
+        <div class="slider-bar">
+          <input
+            style="width: 260px"
+            id="slider"
+            type="range"
+            min="2010"
+            max="2019"
+            step="1"
+            value="2010"
+            list="tickmarks"
+          />
+          <span class="slider-value">2010</span>
+        </div>
+      </div>
+      <div class="legend">
+        <div class="legend-color"></div>
+        <div class="legend-val">
+          <span class="legendT1">400</span>
+          <span class="legendT2">1700</span>
+        </div>
+      </div>
+      <div id="echart-view"></div>
+      <div class="description">
+        <div class="title">Information:</div>
+        <div class="content">
+          The peak time for electricity use, as you’d expect, is between 6pm and 8pm. This is  when most people are cooking dinner, switching on lights, watching TV, and using various appliances around the home. 
+
+          <b>
+            <p>How much electricity does a house use per day? </p>
+          </b>
+          It’s tricky to be precise with daily usage, because it depends on various factors – such as whether it’s midweek or weekend, how many people live at home, and the number of appliances in use, etc. The time of year is another factor. Darker, colder months mean higher energy bills than in summer, for example. 
+
+          Taking all this into consideration, household electricity use works out at around 8kWh (242kWh divided by 30 days) for a medium use household. 
+        </div>
+      </div>
+      
+    </div>
+    <script>
+      // var aa={
+      //   2010:[650.87, 2699904.88, 4169.25, 3441.47],
+      //   2011:[653.00, 2662797.82, 4100.95, 3413.30],
+      //   2012:[655.52, 2632477.62, 4032.40, 3310.26],
+      //   2013:[658.08, 2592871.76, 3958.74, 3298.65],
+      //   2014:[662.25, 2610129.94, 3961.70, 3273.80],
+      //   2015:[664.74, 2582292.43, 3905.65, 3231.15],
+      //   2016:[671.34, 2540189.96, 3796.88, 3115.41],
+      //   2017:[675.60, 2526596.51, 3749.31, 3029.94],
+      //   2018:[681.67, 2466867.08, 3626.44, 2934.21],
+      //   2019:[686.97, 2458657.95, 3586.42, 2902.64],
+      // }
+      const chartData = {
+        tm: [
+          [
+            650.87, 653, 655.52, 658.08, 662.25, 664.74, 671.34, 675.6, 681.67,
+            686.97,
+          ],
+          "meters",
+        ],
+        tc: [
+          [
+            2699904.88, 2662797.82, 2632477.62, 2592871.76, 2610129.94,
+            2582292.43, 2540189.96, 2526596.51, 2466867.08, 2458657.95,
+          ],
+          "kWh",
+        ],
+        mm: [
+          [
+            4169.25, 4100.95, 4032.4, 3958.74, 3961.7, 3905.65, 3796.88,
+            3749.31, 3626.44, 3586.42,
+          ],
+          "kWh per meter",
+        ],
+        mc: [
+          [
+            3441.47, 3413.3, 3310.26, 3298.65, 3273.8, 3231.15, 3115.41,
+            3029.94, 2934.21, 2902.64,
+          ],
+          "kWh per meter",
+        ],
+      };
+
+      const legendMapping = {
+        tm: [400, 1700],
+        tc: [1000000, 10000000],
+        mm: [2000, 10000],
+        mc: [1500, 4000],
+      };
+
+      const mapStop = {
+        tm: [
+          [400, "#ffffcc"],
+          [544, "#ffeda0"],
+          [688, "#fed976"],
+          [832, "#feb24c"],
+          [976, "#fd8d3c"],
+          [1120, "#fc4e2a"],
+          [1264, "#e31a1c"],
+          [1408, "#bd0026"],
+          [1552, "#940025"],
+          [1700, "#67001f"]
+        ],
+        tc: [
+          [1000000, "#ffffcc"],
+          [2000000, "#ffeda0"],
+          [3000000, "#fed976"],
+          [4000000, "#feb24c"],
+          [5000000, "#fd8d3c"],
+          [6000000, "#fc4e2a"],
+          [7000000, "#e31a1c"],
+          [8000000, "#bd0026"],
+          [9000000, "#940025"],
+          [10000000, "#67001f"],
+        ],
+        mm: [
+          [2000, "#ffffcc"],
+          [2880, "#ffeda0"],
+          [3760, "#fed976"],
+          [4640, "#feb24c"],
+          [5520, "#fd8d3c"],
+          [6400, "#fc4e2a"],
+          [7280, "#e31a1c"],
+          [8160, "#bd0026"],
+          [9040, "#940025"],
+          [10000, "#67001f"]
+        ],
+        mc: [
+          [1500, "#ffffcc"],
+          [2160, "#ffeda0"],
+          [2820, "#fed976"],
+          [3480, "#feb24c"],
+          [4140, "#fd8d3c"],
+          [4800, "#fc4e2a"],
+          [5460, "#e31a1c"],
+          [6120, "#bd0026"],
+          [6780, "#940025"],
+          [7500, "#67001f"]
+        ],
+      };
+
+      const chartMaxMinMapping = {
+        tm: [650, 690],
+        tc: [2458600, 2700000],
+        mm: [3500, 4200],
+        mc: [2800, 3500],
+      };
+
+      const App = {
+        init: function () {
+          this.metricType = "tm";
+          this.metricYear = 2010;
+          this.hoveredStateId = null;
+          $(".select1").css("background-color", "skyblue");
+          data.features.forEach((o, i)=>{ o.id = i});
+         this.geojson = data;
+          this.bindEvents();
+          this.initChart();
+          this.initMap();
+          this.addMapEvent();
+        },
+        initMap: function () {
+          mapboxgl.accessToken =
+            "pk.eyJ1IjoibGh6Mzc2NjA0MjQ3IiwiYSI6ImNrbTBxbGxtMjF3eTMybnBsOG92eWpnYnkifQ.mnRxYYWHOJ644qlBlfFQZA";
+          this.map = new mapboxgl.Map({
+            container: "map",
+            style: "mapbox://styles/mapbox/dark-v10",
+            center: [-3.1626361489471, 52.8157884167155],
+            zoom: 6,
+            pitch: 0,
+          });
+
+          this.map.on("load", () => {
+            this.map.addSource("EnglandData", {
+              type: "geojson",
+              data: this.geojson,
+            });
+
+            this.map.addSource("areaName", {
+              type: "geojson",
+              data: areaName,
+            });
+
+            this.map.addLayer({
+              id: `${this.metricType}_${this.metricYear}`,
+              type: "fill",
+              source: "EnglandData",
+              layout: {},
+              paint: {
+                "fill-color": {
+                  property: `${this.metricType}_${this.metricYear}`,
+                  stops: mapStop[this.metricType],
+                },
+                "fill-opacity": [
+                  "case",
+                  ["boolean", ["feature-state", "hover"], false],
+                  1,
+                  0.7,
+                ],
+              },
+            });
+
+            this.map.addLayer({
+              id: "areaName",
+              type: "symbol",
+              source: "areaName",
+              layout: {
+                "text-field": ["get", "name"],
+                "text-offset": [0, 1.25],
+                "text-anchor": "left",
+                "text-size": 12,
+              },
+              paint: {
+                "text-color": "#ffffff",
+              },
+            });
+          });
+        },
+        removeLayer: function () {
+          if (this.map.getLayer(`${this.metricType}_${this.metricYear}`)) {
+            this.map.removeLayer(`${this.metricType}_${this.metricYear}`);
+          }
+          if (this.map.getLayer("areaName")) {
+            this.map.removeLayer("areaName");
+          }
+        },
+        addMapLayer: function () {
+          this.map.addLayer({
+            id: `${this.metricType}_${this.metricYear}`,
+            type: "fill",
+            source: "EnglandData",
+            layout: {},
+            paint: {
+              "fill-color": {
+                property: `${this.metricType}_${this.metricYear}`,
+                stops: mapStop[this.metricType],
+              },
+              // "fill-opacity": 1,
+              "fill-opacity": [
+                "case",
+                ["boolean", ["feature-state", "hover"], false],
+                1,
+                0.5,
+              ],
+            },
+          });
+
+          this.map.addLayer({
+            id: "areaName",
+            type: "symbol",
+            source: "areaName",
+            layout: {
+              "text-field": ["get", "name"],
+              "text-offset": [0, 1.25],
+              "text-anchor": "left",
+              "text-size": 12,
+            },
+            paint: {
+              "text-color": "#ffffff",
+            },
+          });
+        },
+        renderYAxis: function (metric) {
+          if (metric === "tm") {
+            return "10%";
+          }
+          if (metric === "tc") {
+            return "25%";
+          }
+          if (["mm", "mc"].includes(metric)) {
+            return "15%";
+          }
+        },
+        initChart: function () {
+          this.myChart = echarts.init(document.getElementById("echart-view"));
+          const option = {
+            tooltip: {
+              trigger: "axis",
+              formatter: (params) => {
+                return `<div>value: ${params[0].value} ${
+                  chartData[this.metricType][1]
+                }</div>`;
+              },
+            },
+            grid: {
+              left: this.renderYAxis(this.metricType),
+            },
+
+            xAxis: {
+              type: "category",
+              data: [
+                "2010",
+                "2011",
+                "2012",
+                "2013",
+                "2014",
+                "2015",
+                "2016",
+                "2017",
+                "2018",
+                "2019",
+              ],
+            },
+            yAxis: {
+              name: chartData[this.metricType][1],
+              type: "value",
+              min: chartMaxMinMapping[this.metricType][0],
+              max: chartMaxMinMapping[this.metricType][1],
+            },
+            series: [
+              {
+                data: chartData[this.metricType][0],
+                type: "line",
+              },
+            ],
+          };
+          this.myChart.setOption(option);
+        },
+        addMapEvent: function () {
+          this.map.on("mousemove", `${this.metricType}_${this.metricYear}`, (e) => {
+              if (this.popup) {
+                this.popup.remove();
+              }
+              const data = e.features[0].properties[Object.keys(e.features[0].properties).find((o) => o === `${this.metricType}_${this.metricYear}`)];
+              const html = `
+              <div style="font-size:14px; padding: 0 5px">
+                <div>Name: ${e.features[0].properties.lsoa11nm}</div>
+                <div>Code: ${e.features[0].properties.lsoa11cd}</div>
+                <div>Value: ${data} ${chartData[this.metricType][1]}</div>
+              </div>
+            `;
+              this.popup = new mapboxgl.Popup({ closeButton: false });
+              this.popup.setLngLat(e.lngLat).setHTML(html).addTo(this.map);
+              if (e.features.length > 0) {
+                if (this.hoveredStateId !== null) {
+                  this.map.setFeatureState(
+                    { source: "EnglandData", id: this.hoveredStateId },
+                    { hover: false }
+                  );
+                }
+                this.hoveredStateId = e.features[0].id;
+                this.map.setFeatureState(
+                  { source: "EnglandData", id: this.hoveredStateId },
+                  { hover: true }
+                );
+              }
+            }
+          );
+
+          this.map.on("mouseleave", `${this.metricType}_${this.metricYear}`, (e) => {
+              if (this.popup) {
+                this.popup.remove();
+              }
+
+              if (this.hoveredStateId !== null) {
+                this.map.setFeatureState({ source: 'EnglandData', id: this.hoveredStateId },{ hover: false });
+              }
+              this.hoveredStateId = null;
+            }
+          );
+        },
+        bindEvents: function () {
+          document.getElementById("slider").addEventListener("input", (e) => {
+            $(".slider-value").html(e.target.value);
+            this.removeLayer();
+            this.metricYear = Number(e.target.value);
+            this.addMapLayer();
+            this.addMapEvent();
+            if (this.popup) {
+              this.popup.remove();
+            }
+          });
+
+          $(".select1").click((e) => {
+            this.removeLayer();
+            this.metricType = "tm";
+            $(".select-list").css("background-color", "transparent");
+            $(".select1").css("background-color", "skyblue");
+            this.initChart();
+            this.addMapLayer();
+            this.addMapEvent();
+            $(".legendT1").html(legendMapping[this.metricType][0]);
+            $(".legendT2").html(legendMapping[this.metricType][1]);
+            if (this.popup) {
+              this.popup.remove();
+            }
+          });
+
+          $(".select2").click((e) => {
+            this.removeLayer();
+            this.metricType = "tc";
+            $(".select-list").css("background-color", "transparent");
+            $(".select2").css("background-color", "skyblue");
+            this.initChart();
+            this.addMapLayer();
+            this.addMapEvent();
+            $(".legendT1").html(legendMapping[this.metricType][0]);
+            $(".legendT2").html(legendMapping[this.metricType][1]);
+
+            if (this.popup) {
+              this.popup.remove();
+            }
+          });
+
+          $(".select3").click((e) => {
+            this.removeLayer();
+            this.metricType = "mm";
+            $(".select-list").css("background-color", "transparent");
+            $(".select3").css("background-color", "skyblue");
+            this.initChart();
+            this.addMapLayer();
+            this.addMapEvent();
+            $(".legendT1").html(legendMapping[this.metricType][0]);
+            $(".legendT2").html(legendMapping[this.metricType][1]);
+            if (this.popup) {
+              this.popup.remove();
+            }
+          });
+
+          $(".select4").click((e) => {
+            this.removeLayer();
+            this.metricType = "mc";
+            $(".select-list").css("background-color", "transparent");
+            $(".select4").css("background-color", "skyblue");
+            this.initChart();
+            this.addMapLayer();
+            this.addMapEvent();
+            $(".legendT1").html(legendMapping[this.metricType][0]);
+            $(".legendT2").html(legendMapping[this.metricType][1]);
+            if (this.popup) {
+              this.popup.remove();
+            }
+          });
+        },
+      };
+      App.init();
+    </script>
+  </body>
+</html>
