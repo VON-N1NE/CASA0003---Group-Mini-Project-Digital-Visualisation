@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>DOmesticEPC</title>
+<meta charset='utf-8' />
+<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+<link rel="icon" type="image/png" href="https://img.icons8.com/bubbles/50/000000/car.png">
+
+<script src="https://api.mapbox.com/mapbox-gl-js/v2.0.1/mapbox-gl.js"></script>
+<link href="https://api.mapbox.com/mapbox-gl-js/v2.0.1/mapbox-gl.css" rel="stylesheet" />
+
+<script charset="utf-8" src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300&family=Noto+Sans+KR:wght@300&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" type="text/css" href="../css/style_map1.css">
+
+
+</head>
+
+<body>
+    
+    <div id="map"></div>
+    
+    
+
+     <!-- Slideshow container -->
+    <div class="slideshow-container">
+
+      <!-- Full-width slides/quotes -->
+      <div class="mySlides">
+        <p>Most parts of the UK have an average rating of B</p>
+      </div>
+
+      <div class="mySlides">
+        <p>Changes over the years are not very obvious</p>
+      </div>
+
+      <div class="mySlides">
+        <p>The median mark is used, therefore it may not accurately reflect the real situation. Also, the map is using the local authority view, therefore it may not be detailed enough.</p>
+      </div>
+
+
+      <!-- Next/prev buttons -->
+      <a class="prev" onclick="plusSlides(-1)">&#10094;</a>
+      <a class="next" onclick="plusSlides(1)">&#10095;</a>
+    
+
+    <!-- Dots/bullets/indicators -->
+    <div class="dot-container">
+      <span class="dot" onclick="currentSlide(1)"></span>
+      <span class="dot" onclick="currentSlide(2)"></span>
+      <span class="dot" onclick="currentSlide(3)"></span>
+    </div> 
+    </div>
+
+    <div class='map-overlay' id='legend'>Population</div>
+
+    <!-- CONSOLEEE -->
+    <div id="console">
+        <h2 style="font-size: 35px;">Distrubution of domestic EPC in the UK</h2>
+         <p class="credit">Data: <a href="https://epc.opendatacommunities.org/domestic/search">Ministry of Housing, Communities and Local Government UK</a>.</p>
+
+         <button type="button" class="collapsible">  More Information</button>
+         <div class="extra_content">
+           <p>This dataset focuses on the domestic EPC ratings of houses in the UK. The data is aggregated together to get the median score of each local authority.<br><br> In this map, it shows the median EPC score each year, the slider will filter out the corresponding year's data.</p>
+         </div>
+
+         <div class="session">
+           <h2>EPC Rating</h2>
+           <div class="row colors"></div>
+            <div class="row labels">
+             <div class="label">0</div>
+             <div class="label">41</div>
+             <div class="label">49</div>
+             <div class="label">54.5</div>
+             <div class="label">60</div>
+             <div class="label">67</div>
+            </div>
+         </div>
+
+        <div class="session" id="sliderbar">
+          <h2 style="margin-top: 0.5em;">Year: <label id="active-year">2019</label> </h2> 
+          <input id='slider' name='slider' class='row' type='range' min='2015' max='2020' step='1' value='2019' />
+        </div>
+
+
+
+        
+
+    </div>   
+
+    
+    
+
+
+<script>
+
+  var target = [-1.5287176,52.5400866];
+  const slider = document.getElementById("slider")
+
+
+  mapboxgl.accessToken = 'pk.eyJ1IjoiaGlzdG9pcmV4c3IiLCJhIjoiY2tqdmltNmg2MDk5OTJ2cXVub2RwMHExZyJ9.9ZVPyPVZPg28WyGD_cl5QA';
+
+        // Load a new map in the 'map' HTML div
+        var map = new mapboxgl.Map({
+            container: 'map', // container id
+            style: 'mapbox://styles/histoirexsr/ckoiy6ozt04jz17qy4ghanp5w?optimize=true', // Using the standard Mapbox Light style
+            center: [5.2404123, 43.2803051], // starting position [lng, lat]
+            zoom: 5.24, // starting zoom
+            //pitch: 60, 
+            bearing: 0,
+
+        });
+
+
+  //import data from api
+
+  
+  map.on('load', function() {  
+            map.addControl(new mapboxgl.NavigationControl());
+
+            map.rotateTo((8900 / 110), { duration: 8000 });
+            map.flyTo({
+              center: target,
+              zoom: 6,
+              //bearing: 315,
+              pitch: 0,
+              speed: 0.2,
+              curve: 1,
+              easing: function(t){
+                return t;
+              },
+            });
+
+            
+            //filter
+
+            var filterYear = ['==', ['number', ['get', 'Year']], 2019];
+            
+            //base layer
+              // layer for taxi pickup freq
+              map.addLayer({
+                  id: 'median_rating_year',
+                  type: 'circle',
+                  source: {
+                    type: "geojson",
+                    data: 'data_w_centroid.geojson'
+                  }, // name of tileset layer
+                  'layout': {
+                      'visibility': 'visible'
+                  },
+                  'paint': {
+                    'circle-radius': [
+                    
+                      "interpolate",
+                      ["linear"],
+                      ["zoom"],
+                      0,
+                      4,
+                      5.63,
+                      4.5,
+                      6.79,
+                      6,
+                      8.54,
+                      11.5,
+                      22,
+                      15
+                      ],
+                      'circle-color': [
+                        "interpolate",
+                        ["linear"],
+                        ["get", "Current_Median"],
+                        41,
+                        "#ff2f00",
+                        49,
+                        "#ffa33d",
+                        54.5,
+                        "#ffee58",
+                        60,
+                        "#80b336",
+                        67,
+                        "#2e7d32"
+                          ],
+                    'circle-opacity': 0.8
+                    },
+                    filter : ['all', filterYear],
+                    });
+
+
+                      // Create a popup, but don't add it to the map yet.
+                      var popup = new mapboxgl.Popup({
+                      closeButton: false,
+                      closeOnClick: false
+                      });
+                       
+                      map.on('mouseenter', 'median_rating_year', function (e) {
+                      // Change the cursor style as a UI indicator.
+                      map.getCanvas().style.cursor = 'pointer';
+                       
+                      var coordinates = e.features[0].geometry.coordinates.slice();
+                      var description = 'Local Authority: ' + e.features[0].properties.LA_Label + '<br> Current Median: ' + e.features[0].properties.Current_Median +'<br> Total ratings: ' + e.features[0].properties.Rating_count ;
+                       
+                      // Ensure that if the map is zoomed out such that multiple
+                      // copies of the feature are visible, the popup appears
+                      // over the copy being pointed to.
+                      while (Math.abs(e.lngLat.lng - coordinates[0]) > 180) {
+                      coordinates[0] += e.lngLat.lng > coordinates[0] ? 360 : -360;
+                      }
+                       
+                      // Populate the popup and set its coordinates
+                      // based on the feature found.
+                      popup.setLngLat(coordinates).setHTML(description).addTo(map);
+                      });
+                       
+                      map.on('mouseleave', 'median_rating_year', function () {
+                      map.getCanvas().style.cursor = '';
+                      popup.remove();
+                      });
+
+                      //color legend
+                      var layers = ['< 2224','2.2k - 287k','287k - 572k','572k - 857k','857k - 1.1M'];
+                      var colors = ["#f3df2b","#f8951b","#f46666","#f82525","#9e0505"];
+
+                      for (i = 0; i < layers.length; i++) {
+                        var layer = layers[i];
+                        var color = colors[i];
+                        var item = document.createElement('div');
+                        var key = document.createElement('span');
+                        key.className = 'legend-key';
+                        key.style.backgroundColor = color;
+
+                        var value = document.createElement('span');
+                        value.innerHTML = layer;
+                        item.appendChild(key);
+                        item.appendChild(value);
+                        legend.appendChild(item);
+                      }
+
+                  });
+
+                        
+
+
+            
+          
+//slider
+  document.getElementById('slider').addEventListener('input', function(e) {
+
+  var year = parseInt(e.target.value);
+  // update the map
+  filterYear = ['==', ['number', ['get', 'Year']], year];
+  map.setFilter('median_rating_year', ['all', filterYear]);
+
+  document.getElementById('active-year').innerText = year;
+
+});
+
+
+//scipt for extra info box
+var coll = document.getElementsByClassName("collapsible");
+var i;
+
+for (i = 0; i < coll.length; i++) {
+  coll[i].addEventListener("click", function() {
+    this.classList.toggle("active");
+    var content = this.nextElementSibling;
+    if (content.style.maxHeight){
+      content.style.maxHeight = null;
+    } else {
+      content.style.maxHeight = content.scrollHeight + "px";
+    }
+  });
+}
+
+
+
+//slideshow script
+var slideIndex = 1;
+showSlides(slideIndex);
+
+function plusSlides(n) {
+  showSlides(slideIndex += n);
+}
+
+function currentSlide(n) {
+  showSlides(slideIndex = n);
+}
+
+function showSlides(n) {
+  var i;
+  var slides = document.getElementsByClassName("mySlides");
+  var dots = document.getElementsByClassName("dot");
+  if (n > slides.length) {slideIndex = 1}
+    if (n < 1) {slideIndex = slides.length}
+    for (i = 0; i < slides.length; i++) {
+      slides[i].style.display = "none";
+    }
+    for (i = 0; i < dots.length; i++) {
+      dots[i].className = dots[i].className.replace(" active", "");
+    }
+  slides[slideIndex-1].style.display = "block";
+  dots[slideIndex-1].className += " active";
+} 
+
+
+    
+
+</script>
+
+</body>
+</html>
